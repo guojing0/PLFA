@@ -141,17 +141,46 @@ open import Data.Nat using (ℕ; zero; suc; _+_; _*_; _∸_)
                               | +-assoc p (m * p) (n * p)
                               = refl
 
-*-assoc : ∀ (m n p : ℕ) → (m * n) * p ≡ m * (n * p)
-*-assoc zero n p = refl
-*-assoc (suc m) n p =
+-- Bin problem
+
+data Bin : Set where
+  ⟨⟩ : Bin
+  _O : Bin → Bin
+  _I : Bin → Bin
+
+inc : Bin → Bin
+inc ⟨⟩ = ⟨⟩ I
+inc (x O) = x I
+inc (x I) = (inc x) O
+
+to   : ℕ → Bin
+to zero = ⟨⟩ O
+to (suc n) = inc (to n)
+
+from : Bin → ℕ
+from ⟨⟩ = 0
+from (⟨⟩ O) = 0
+from (⟨⟩ I) = 1
+from (x O) = 2 * from x
+from (x I) = 1 + 2 * from x
+
+bin-from-inc : ∀ (b : Bin) → from (inc b) ≡ suc (from b)
+bin-from-inc ⟨⟩ = refl
+bin-from-inc (b O) = {!!}
+bin-from-inc (b I) = {!!}
+
+-- bin-to-from : ∀ (b : Bin) → to (from b) ≡ b
+-- this is false since both `from ⟨⟩` and `from (⟨⟩ O)` return 0
+
+bin-from-to : ∀ (n : ℕ) → from (to n) ≡ n
+bin-from-to zero = refl
+bin-from-to (suc n) =
   begin
-    ((suc m) * n) * p
+    from (to (suc n))
   ≡⟨⟩
-    (n + m * n) * p
-  ≡⟨ *-distrib-+ n (m * n) p ⟩
-    (n * p) + m * n * p
-  ≡⟨ cong ((n * p) +_) (*-assoc m n p) ⟩
-    (n * p) + m * (n * p)
-  ≡⟨⟩
-    (suc m) * (n * p)
+    from (inc (to n))
+  ≡⟨ bin-from-inc (to n) ⟩
+    suc (from (to n))
+  ≡⟨ cong suc (bin-from-to n) ⟩
+    suc n
   ∎
